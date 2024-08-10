@@ -124,7 +124,7 @@ class FJRedmine {
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
-        $DownloadPath = "$($this.TemporaryDir)\$((Get-Date).ToString("yyyyMMddHHmmss"))_$($Attachment.FileName)";
+        $DownloadPath = "$($this.TemporaryDir)\$((Get-Date).ToString('yyyyMMddHHmmss'))_$($Attachment.FileName)";
         Invoke-WebRequest `
             -Uri $Attachment.ContentUrl `
             -Method "GET" `
