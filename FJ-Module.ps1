@@ -16,9 +16,9 @@ class FJIssue {
 }
 
 class FJRedmine {
-    [string] $BaseUrl;
-    [string] $Token;
-    [string] $TemporaryDir = "$($Env:USERPROFILE)\develop\redmine\temp";
+    hidden [string] $BaseUrl;
+    hidden [string] $Token;
+    hidden [string] $TemporaryDir = "$($Env:USERPROFILE)\develop\redmine\temp";
 
     FJRedmine([string] $BaseUrl, [string] $Token) {
         $this.BaseUrl = $BaseUrl;
@@ -59,6 +59,10 @@ class FJRedmine {
             return $Object;
         }
         return @($Object);
+    }
+
+    [void] SetTemporaryDir([string] $TemporaryDir) {
+        $this.TemporaryDir = $TemporaryDir;
     }
 
     [FJIssue[]] GetIssues([hashtable] $Filter) {
