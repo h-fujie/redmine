@@ -69,18 +69,14 @@ class FJRedmine {
         $Issues = New-Object System.Collections.ArrayList;
         $Query = "";
         foreach ($Key in $Filter.Keys) {
-            if (0 -ne $Query.Length) {
-                $Query += "&";
-            }
-            $Query += "$([System.Web.HttpUtility]::UrlEncode($Key))=$([System.Web.HttpUtility]::UrlEncode($Filter[$Key]))";
+            $Query += "&$([System.Web.HttpUtility]::UrlEncode($Key))=$([System.Web.HttpUtility]::UrlEncode($Filter[$Key]))";
         }
+        $total = 1;
         $offset = 0;
         $limit = 100;
-        while ($true) {
-            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id&$($Query)");
-            if ($null -eq $Content.issues.issue) {
-                break;
-            }
+        for (; $offset -lt $total; $offset += $limit) {
+            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$($Query)");
+            $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
                 $Issue = New-Object FJIssue;
                 $Issue.IssueId   = [int] $Element.id;
@@ -89,7 +85,6 @@ class FJRedmine {
                 $Issue.StatusId  = [int] $Element.status.id;
                 [void] $Issues.Add($Issue);
             }
-            $offset += $limit;
         }
         return $Issues.ToArray();
     }
