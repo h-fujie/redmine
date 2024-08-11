@@ -8,7 +8,7 @@ class FJSecurity {
 
     hidden static [hashtable] ReadCredentials() {
         if (-not (Test-Path -Path "$([FJSecurity]::BasePath)")) {
-            New-Item -Path "$([FJSecurity]::BasePath)" -ItemType Directory -Force;
+            New-Item -Path "$([FJSecurity]::BasePath)" -ItemType Directory;
         }
         if (-not (Test-Path -Path "$([FJSecurity]::CredentialsPath)")) {
             Set-Content -Path "$([FJSecurity]::CredentialsPath)" -Value "" -Encoding Default;
