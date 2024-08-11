@@ -31,7 +31,8 @@ class FJSecurity {
     static [pscredential] LoadCredential([string] $User) {
         $Credentials = [FJSecurity]::ReadCredentials();
         if (-not $Credentials.Contains($User)) {
-            throw "Credentialが保存されていません。 User: $($User)";
+            Write-Warning "Credentialが保存されていません。 User: $($User)";
+            return $null;
         }
         return New-Object System.Management.Automation.PSCredential $User,(ConvertTo-SecureString -String $Credentials[$User]);
     }
