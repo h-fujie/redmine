@@ -5,6 +5,15 @@ class FJAttachment {
     [string] $FileName;
     [string] $ContentType;
     [string] $ContentUrl;
+
+    static [FJAttachment] Create([System.Xml.XmlElement] $Element) {
+        $Attachment = New-Object FJAttachment;
+        $Attachment.AttachmentId = $Element.id;
+        $Attachment.FileName     = $Element.filename;
+        $Attachment.ContentType  = $Element.content_type;
+        $Attachment.ContentUrl   = $Element.content_url;
+        return $Attachment;
+    }
 }
 
 class FJIssue {
@@ -13,6 +22,15 @@ class FJIssue {
     [int]    $TrackerId;
     [int]    $StatusId;
     [FJAttachment[]] $Attachments;
+
+    static [FJIssue] Create([System.Xml.XmlElement] $Element) {
+        $Issue = New-Object FJIssue;
+        $Issue.IssueId   = [int] $Element.id;
+        $Issue.ProjectId = [int] $Element.project.id;
+        $Issue.TrackerId = [int] $Element.tracker.id;
+        $Issue.StatusId  = [int] $Element.status.id;
+        return $Issue;
+    }
 }
 
 class FJRedmine {
@@ -97,12 +115,7 @@ class FJRedmine {
             $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$([FJRedmine]::GetIssueQuery($Filter))");
             $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
-                $Issue = New-Object FJIssue;
-                $Issue.IssueId   = [int] $Element.id;
-                $Issue.ProjectId = [int] $Element.project.id;
-                $Issue.TrackerId = [int] $Element.tracker.id;
-                $Issue.StatusId  = [int] $Element.status.id;
-                [void] $Issues.Add($Issue);
+                [void] $Issues.Add([FJIssue]::Create($Element));
             }
         }
         return $Issues.ToArray();
@@ -113,28 +126,15 @@ class FJRedmine {
         if ($null -eq $Content.issue) {
             return $null;
         }
-        $Issue = New-Object FJIssue;
-        $Issue.IssueId   = [int] $Content.issue.id;
-        $Issue.ProjectId = [int] $Content.issue.project.id;
-        $Issue.TrackerId = [int] $Content.issue.tracker.id;
-        $Issue.StatusId  = [int] $Content.issue.status.id;
+        $Issue = [FJIssue]::Create($Content.issue);
         $Attachments = New-Object System.Collections.ArrayList;
         if ($null -ne $Content.issue.attachments) {
             foreach ($Element in [FJRedmine]::ToArray($Content.issue.attachments.attachment)) {
-                [void] $Attachments.Add($this.GetAttachment($Element));
+                [void] $Attachments.Add([FJAttachment]::Create($Element));
             }
         }
         $Issue.Attachments = $Attachments.ToArray();
         return $Issue;
-    }
-
-    [FJAttachment] GetAttachment([System.Xml.XmlElement] $Element) {
-        $Attachment = New-Object FJAttachment;
-        $Attachment.AttachmentId = $Element.id;
-        $Attachment.FileName     = $Element.filename;
-        $Attachment.ContentType  = $Element.content_type;
-        $Attachment.ContentUrl   = $Element.content_url;
-        return $Attachment;
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
