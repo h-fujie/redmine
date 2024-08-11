@@ -8,10 +8,10 @@ class FJAttachment {
 
     static [FJAttachment] Create([System.Xml.XmlElement] $Element) {
         $Attachment = New-Object FJAttachment;
-        $Attachment.AttachmentId = [int]    $Element.id;
-        $Attachment.FileName     = [string] $Element.filename;
-        $Attachment.ContentType  = [string] $Element.content_type;
-        $Attachment.ContentUrl   = [string] $Element.content_url;
+        $Attachment.AttachmentId = $Element.id;
+        $Attachment.FileName     = $Element.filename;
+        $Attachment.ContentType  = $Element.content_type;
+        $Attachment.ContentUrl   = $Element.content_url;
         return $Attachment;
     }
 }
@@ -25,10 +25,10 @@ class FJIssue {
 
     static [FJIssue] Create([System.Xml.XmlElement] $Element) {
         $Issue = New-Object FJIssue;
-        $Issue.IssueId   = [int] $Element.id;
-        $Issue.ProjectId = [int] $Element.project.id;
-        $Issue.TrackerId = [int] $Element.tracker.id;
-        $Issue.StatusId  = [int] $Element.status.id;
+        $Issue.IssueId   = $Element.id;
+        $Issue.ProjectId = $Element.project.id;
+        $Issue.TrackerId = $Element.tracker.id;
+        $Issue.StatusId  = $Element.status.id;
         return $Issue;
     }
 }
