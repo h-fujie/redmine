@@ -84,9 +84,6 @@ class FJRedmine {
     }
 
     hidden static [string] GetIssueQuery([FJIssue] $Filter) {
-        if ($null -eq $Filter) {
-            return "";
-        }
         $Query = "";
         if (0 -ne $Filter.IssueId) {
             $Query += "&issue_id=$($Filter.IssueId)";
