@@ -65,17 +65,36 @@ class FJRedmine {
         $this.TemporaryDir = $TemporaryDir;
     }
 
-    [FJIssue[]] GetIssues([hashtable] $Filter) {
-        $Issues = New-Object System.Collections.ArrayList;
-        $Query = "";
-        foreach ($Key in $Filter.Keys) {
-            $Query += "&$([System.Web.HttpUtility]::UrlEncode($Key))=$([System.Web.HttpUtility]::UrlEncode($Filter[$Key]))";
+    hidden static [string] GetIssueQuery([FJIssue] $Filter) {
+        if ($null -eq $Filter) {
+            return "";
         }
+        $Query = "";
+        if (0 -ne $Filter.IssueId) {
+            $Query += "&issue_id=$($Filter.IssueId)";
+        }
+        if (0 -ne $Filter.ProjectId) {
+            $Query += "&project_id=$($Filter.ProjectId)";
+        }
+        if (0 -ne $Filter.TrackerId) {
+            $Query += "&tracker_id=$($Filter.TrackerId)";
+        }
+        if (0 -ne $Filter.StatusId) {
+            $Query += "&status_id=$($Filter.StatusId)";
+        }
+        return $Query;
+    }
+
+    [FJIssue[]] GetIssues() {
+        return $this.GetIssues((New-Object FJIssue));
+    }
+
+    [FJIssue[]] GetIssues([FJIssue] $Filter) {
+        $Issues = New-Object System.Collections.ArrayList;
         $total = 1;
-        $offset = 0;
         $limit = 100;
-        for (; $offset -lt $total; $offset += $limit) {
-            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$($Query)");
+        for ($offset = 0; $offset -lt $total; $offset += $limit) {
+            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$([FJRedmine]::GetIssueQuery($Filter))");
             $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
                 $Issue = New-Object FJIssue;
