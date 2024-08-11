@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Web;
+﻿Add-Type -AssemblyName System.Web;
 
 class FJAttachment {
     [int]    $AttachmentId;

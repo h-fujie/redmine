@@ -1,9 +1,9 @@
-class FJSecurity {
+﻿class FJSecurity {
     hidden static [string] $BasePath = "$($Env:USERPROFILE)\.fj";
     hidden static [string] $CredentialsPath = "$([FJSecurity]::BasePath)\credentials";
 
     hidden static [string] CreateEncryptString() {
-        return Read-Host -Prompt "Enter Password" -MaskInput | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString;
+        return Read-Host -Prompt "パスワードを入力してください" -MaskInput | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString;
     }
 
     hidden static [hashtable] ReadCredentials() {
