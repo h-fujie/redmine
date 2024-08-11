@@ -106,9 +106,7 @@ class FJRedmine {
 
     [FJIssue[]] GetIssues([FJIssue] $Filter) {
         $Issues = New-Object System.Collections.ArrayList;
-        $total = 1;
-        $limit = 100;
-        for ($offset = 0; $offset -lt $total; $offset += $limit) {
+        for ($offset, $total, $limit = 0, 1, 100; $offset -lt $total; $offset += $limit) {
             $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$([FJRedmine]::GetIssueQuery($Filter))");
             $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
