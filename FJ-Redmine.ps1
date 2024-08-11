@@ -8,19 +8,19 @@ class FJAttachment {
 
     static [FJAttachment] Create([System.Xml.XmlElement] $Element) {
         $Attachment = New-Object FJAttachment;
-        $Attachment.AttachmentId = $Element.id;
-        $Attachment.FileName     = $Element.filename;
-        $Attachment.ContentType  = $Element.content_type;
-        $Attachment.ContentUrl   = $Element.content_url;
+        $Attachment.AttachmentId = [int]    $Element.id;
+        $Attachment.FileName     = [string] $Element.filename;
+        $Attachment.ContentType  = [string] $Element.content_type;
+        $Attachment.ContentUrl   = [string] $Element.content_url;
         return $Attachment;
     }
 }
 
 class FJIssue {
-    [int]    $IssueId;
-    [int]    $ProjectId;
-    [int]    $TrackerId;
-    [int]    $StatusId;
+    [int] $IssueId;
+    [int] $ProjectId;
+    [int] $TrackerId;
+    [int] $StatusId;
     [FJAttachment[]] $Attachments;
 
     static [FJIssue] Create([System.Xml.XmlElement] $Element) {
