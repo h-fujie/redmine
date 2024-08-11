@@ -57,5 +57,4 @@ class FJSecurity {
         }
         [FJSecurity]::WriteCredentials($Credentials);
     }
-
 }
