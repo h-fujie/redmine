@@ -18,7 +18,7 @@ class FJIssue {
 class FJRedmine {
     hidden [string] $BaseUrl;
     hidden [string] $Token;
-    hidden [string] $TemporaryDir = "$($Env:USERPROFILE)\develop\redmine\temp";
+    hidden [string] $TemporaryDir = "$($Env:USERPROFILE)\.fj\redmine";
 
     FJRedmine([string] $BaseUrl, [string] $Token) {
         $this.BaseUrl = $BaseUrl;
@@ -119,6 +119,9 @@ class FJRedmine {
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
+        if (-not (Test-Path -Path "$($this.TemporaryDir)")) {
+            New-Item -Path "$($this.TemporaryDir)" -ItemType Directory -Force;
+        }
         $DownloadPath = "$($this.TemporaryDir)\$((Get-Date).ToString('yyyyMMddHHmmss'))_$($Attachment.FileName)";
         Invoke-WebRequest `
             -Uri $Attachment.ContentUrl `
