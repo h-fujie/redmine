@@ -34,7 +34,7 @@
             Write-Warning "Credentialが保存されていません。 User: $($User)";
             return $null;
         }
-        return New-Object System.Management.Automation.PSCredential $User,(ConvertTo-SecureString -String $Credentials[$User]);
+        return New-Object System.Management.Automation.PSCredential($User, (ConvertTo-SecureString -String $Credentials[$User]));
     }
 
     static [void] SaveCredential([string] $User) {
