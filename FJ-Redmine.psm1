@@ -1,4 +1,6 @@
-﻿Add-Type -AssemblyName System.Web;
+﻿using module ".\FJ-Security.psm1";
+
+Add-Type -AssemblyName System.Web;
 
 class FJAttachment {
     [int]    $AttachmentId;
@@ -36,11 +38,18 @@ class FJIssue {
 class FJRedmine {
     hidden [string] $BaseUrl;
     hidden [string] $Token;
+    hidden [string] $User;
     hidden [string] $TemporaryDir = "$($Env:USERPROFILE)\.fj\redmine";
 
     FJRedmine([string] $BaseUrl, [string] $Token) {
         $this.BaseUrl = $BaseUrl;
         $this.Token   = $Token;
+    }
+
+    FJRedmine([string] $BaseUrl, [string] $Token, [string] $User) {
+        $this.BaseUrl = $BaseUrl;
+        $this.Token   = $Token;
+        $this.User    = $User;
     }
 
     hidden [xml] InvokeGetRequest([string] $Path) {
@@ -51,11 +60,12 @@ class FJRedmine {
                 "X-Redmine-API-Key" = $this.Token
                 "Accept"            = "application/xml"
             } `
+            -Credential ([FJSecurity]::LoadCredential($this.User)) `
             -ErrorAction Stop;
         return [xml] $Response.Content;
     }
 
-    hidden [xml] InvokePostRequest([string] $Path, [hashtable] $Body) {
+    hidden [xml] InvokePostRequest([string] $Path, [xml] $Body) {
         $Response = Invoke-WebRequest `
             -Uri "$($this.BaseUrl)$($Path)" `
             -Method "POST" `
@@ -65,6 +75,7 @@ class FJRedmine {
                 "Accept"            = "application/xml"
             } `
             -Body $Body `
+            -Credential ([FJSecurity]::LoadCredential($this.User)) `
             -ErrorAction Stop;
         return [xml] $Response.Content;
     }
@@ -145,6 +156,7 @@ class FJRedmine {
                 "Accept"            = $Attachment.ContentType
             } `
             -OutFile $DownloadPath `
+            -Credential ([FJSecurity]::LoadCredential($this.User)) `
             -ErrorAction Stop;
         return $DownloadPath;
     }
