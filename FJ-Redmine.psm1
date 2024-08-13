@@ -43,6 +43,7 @@ class FJIssue {
     [FJProject]       $Project;
     [FJTracker]       $Tracker;
     [FJStatus]        $Status;
+    [string]          $Subject;
     [string]          $Description;
     [FJCustomField[]] $CustomFields;
     [FJAttachment[]]  $Attachments;
@@ -52,6 +53,7 @@ class FJIssue {
         $this.Project = New-Object FJProject($Element.project);
         $this.Tracker = New-Object FJTracker($Element.tracker);
         $this.Status  = New-Object FJStatus($Element.status);
+        $this.Subject     = $Element.subject;
         $this.Description = $Element.description;
         $Fields = New-Object System.Collections.ArrayList;
         if ($null -ne $Element.custom_fields) {
@@ -101,10 +103,10 @@ class FJRedmine {
         return [xml] $Response.Content;
     }
 
-    hidden [xml] InvokePostRequest([string] $Path, [xml] $Body) {
+    hidden [xml] InvokeUpdateRequest([string] $Path, [xml] $Body, [string] $Method) {
         $Response = Invoke-WebRequest `
             -Uri "$($this.BaseUrl)$($Path)" `
-            -Method "POST" `
+            -Method $Method `
             -Headers @{
                 "X-Redmine-API-Key" = $this.Token
                 "Content-Type"      = "application/xml"
@@ -114,6 +116,14 @@ class FJRedmine {
             -Credential ([FJSecurity]::LoadCredential($this.User)) `
             -ErrorAction Stop;
         return [xml] $Response.Content;
+    }
+
+    hidden [xml] InvokePostRequest([string] $Path, [xml] $Body) {
+        return $this.InvokeUpdateRequest($Path, $Body, "POST");
+    }
+
+    hidden [xml] InvokePutRequest([string] $Path, [xml] $Body) {
+        return $this.InvokeUpdateRequest($Path, $Body, "PUT");
     }
 
     hidden static [array] ToArray($Object) {
@@ -173,6 +183,12 @@ class FJRedmine {
         }
         $Issue.Attachments = $Attachments.ToArray();
         return $Issue;
+    }
+
+    [void] UpdateIssue([FJIssue] $Issue) {
+        # 初版はステータスのみ
+        $Body = [xml] "<issue><status_id>$($Issue.Status.Id)</status_id></issue>";
+        $this.InvokePutRequest("/issues/$($Issue.IssueId).xml", $Body);
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
