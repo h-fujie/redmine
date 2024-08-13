@@ -1,4 +1,5 @@
-﻿using module ".\FJ-Security.psm1";
+﻿using module ".\FJ-Common.psm1";
+using module ".\FJ-Security.psm1";
 
 Add-Type -AssemblyName System.Web;
 
@@ -70,10 +71,11 @@ class FJIssueFilter {
 }
 
 class FJRedmine {
+    hidden static [string] $TemporaryDir = "$([FJCommon]::BaseDir)\redmine";
+
     hidden [string] $BaseUrl;
     hidden [string] $Token;
     hidden [string] $User;
-    hidden [string] $TemporaryDir = "$($Env:USERPROFILE)\.fj\redmine";
 
     FJRedmine([string] $BaseUrl, [string] $Token) {
         $this.BaseUrl = $BaseUrl;
@@ -84,10 +86,6 @@ class FJRedmine {
         $this.BaseUrl = $BaseUrl;
         $this.Token   = $Token;
         $this.User    = $User;
-    }
-
-    [void] SetTemporaryDir([string] $TemporaryDir) {
-        $this.TemporaryDir = $TemporaryDir;
     }
 
     hidden [xml] InvokeGetRequest([string] $Path) {
@@ -178,10 +176,10 @@ class FJRedmine {
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
-        if (-not (Test-Path -Path "$($this.TemporaryDir)")) {
-            New-Item -Path "$($this.TemporaryDir)" -ItemType Directory -Force;
+        if (-not (Test-Path -Path $([FJRedmine]::TemporaryDir))) {
+            New-Item -Path $([FJRedmine]::TemporaryDir) -ItemType Directory -Force;
         }
-        $DownloadPath = "$($this.TemporaryDir)\$((Get-Date).ToString('yyyyMMddHHmmss'))_$($Attachment.FileName)";
+        $DownloadPath = "$([FJRedmine]::TemporaryDir)\$((Get-Date).ToString('yyyyMMddHHmmss'))_$($Attachment.FileName)";
         Invoke-WebRequest `
             -Uri $Attachment.ContentUrl `
             -Method "GET" `

@@ -1,26 +1,27 @@
-﻿class FJSecurity {
-    hidden static [string] $BasePath = "$($Env:USERPROFILE)\.fj";
-    hidden static [string] $CredentialsPath = "$([FJSecurity]::BasePath)\credentials";
+﻿using module ".\FJ-Common.psm1";
+
+class FJSecurity {
+    hidden static [string] $CredentialsPath = "$([FJCommon]::BaseDir)\credentials";
 
     hidden static [string] CreateEncryptString() {
         return Read-Host -Prompt "パスワードを入力してください" -MaskInput | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString;
     }
 
     hidden static [hashtable] ReadCredentials() {
-        if (-not (Test-Path -Path "$([FJSecurity]::BasePath)")) {
-            New-Item -Path "$([FJSecurity]::BasePath)" -ItemType Directory;
+        if (-not (Test-Path -Path $([FJSecurity]::BasePath))) {
+            New-Item -Path $([FJSecurity]::BasePath) -ItemType Directory;
         }
-        if (-not (Test-Path -Path "$([FJSecurity]::CredentialsPath)")) {
-            Set-Content -Path "$([FJSecurity]::CredentialsPath)" -Value "" -Encoding Default;
+        if (-not (Test-Path -Path $([FJSecurity]::CredentialsPath))) {
+            Set-Content -Path $([FJSecurity]::CredentialsPath) -Value "" -Encoding Default;
         }
-        return (Get-Content -Path "$([FJSecurity]::CredentialsPath)" -Raw | ConvertFrom-StringData);
+        return (Get-Content -Path $([FJSecurity]::CredentialsPath) -Raw | ConvertFrom-StringData);
     }
 
     hidden static [void] WriteCredentials([hashtable] $Credentials) {
         try {
-            Move-Item -Path "$([FJSecurity]::CredentialsPath)" -Destination "$([FJSecurity]::CredentialsPath).old" -Force;
+            Move-Item -Path $([FJSecurity]::CredentialsPath) -Destination "$([FJSecurity]::CredentialsPath).old" -Force;
             foreach ($Key in $Credentials.Keys) {
-                Add-Content -Path "$([FJSecurity]::CredentialsPath)" -Value "$($Key)=$($Credentials[$Key])" -Encoding Default;
+                Add-Content -Path $([FJSecurity]::CredentialsPath) -Value "$($Key)=$($Credentials[$Key])" -Encoding Default;
             }
         } catch {
             Write-Error "Credentialの保存に失敗しました。";
