@@ -8,31 +8,65 @@ class FJAttachment {
     [string] $ContentType;
     [string] $ContentUrl;
 
-    static [FJAttachment] Create([System.Xml.XmlElement] $Element) {
-        $Attachment = New-Object FJAttachment;
-        $Attachment.AttachmentId = $Element.id;
-        $Attachment.FileName     = $Element.filename;
-        $Attachment.ContentType  = $Element.content_type;
-        $Attachment.ContentUrl   = $Element.content_url;
-        return $Attachment;
+    FJAttachment([System.Xml.XmlElement] $Element) {
+        $this.AttachmentId = $Element.id;
+        $this.FileName     = $Element.filename;
+        $this.ContentType  = $Element.content_type;
+        $this.ContentUrl   = $Element.content_url;
+    }
+}
+
+class FJIdNamePair {
+    [int]    $Id;
+    [string] $Name;
+
+    FJIdNamePair([System.Xml.XmlElement] $Element) {
+        $this.Id   = $Element.id;
+        $this.Name = $Element.name;
+    }
+}
+
+class FJProject : FJIdNamePair { FJProject([System.Xml.XmlElement] $Element) : base($Element) {} }
+class FJTracker : FJIdNamePair { FJTracker([System.Xml.XmlElement] $Element) : base($Element) {} }
+class FJStatus : FJIdNamePair { FJStatus([System.Xml.XmlElement] $Element) : base($Element) {} }
+class FJCustomField : FJIdNamePair {
+    [string] $Value;
+
+    FJCustomField([System.Xml.XmlElement] $Element) : base($Element) {
+        $this.Value = $Element.value;
     }
 }
 
 class FJIssue {
+    [int]             $IssueId;
+    [FJProject]       $Project;
+    [FJTracker]       $Tracker;
+    [FJStatus]        $Status;
+    [string]          $Description;
+    [FJCustomField[]] $CustomFields;
+    [FJAttachment[]]  $Attachments;
+
+    FJIssue([System.Xml.XmlElement] $Element) {
+        $this.IssueId = $Element.id;
+        $this.Project = New-Object FJProject($Element.project);
+        $this.Tracker = New-Object FJTracker($Element.tracker);
+        $this.Status  = New-Object FJStatus($Element.status);
+        $this.Description = $Element.description;
+        $Fields = New-Object System.Collections.ArrayList;
+        if ($null -ne $Element.custom_fields) {
+            foreach ($Field in [FJRedmine]::ToArray($Element.custom_fields.custom_field)) {
+                [void] $Fields.Add((New-Object FJCustomField($Field)));
+            }
+        }
+        $this.CustomFields = $Fields.ToArray();
+    }
+}
+
+class FJIssueFilter {
     [int] $IssueId;
     [int] $ProjectId;
     [int] $TrackerId;
     [int] $StatusId;
-    [FJAttachment[]] $Attachments;
-
-    static [FJIssue] Create([System.Xml.XmlElement] $Element) {
-        $Issue = New-Object FJIssue;
-        $Issue.IssueId   = $Element.id;
-        $Issue.ProjectId = $Element.project.id;
-        $Issue.TrackerId = $Element.tracker.id;
-        $Issue.StatusId  = $Element.status.id;
-        return $Issue;
-    }
 }
 
 class FJRedmine {
@@ -50,6 +84,10 @@ class FJRedmine {
         $this.BaseUrl = $BaseUrl;
         $this.Token   = $Token;
         $this.User    = $User;
+    }
+
+    [void] SetTemporaryDir([string] $TemporaryDir) {
+        $this.TemporaryDir = $TemporaryDir;
     }
 
     hidden [xml] InvokeGetRequest([string] $Path) {
@@ -90,11 +128,7 @@ class FJRedmine {
         return @($Object);
     }
 
-    [void] SetTemporaryDir([string] $TemporaryDir) {
-        $this.TemporaryDir = $TemporaryDir;
-    }
-
-    hidden static [string] GetIssueQuery([FJIssue] $Filter) {
+    hidden static [string] GetIssueQuery([FJIssueFilter] $Filter) {
         $Query = "";
         if (0 -ne $Filter.IssueId) {
             $Query += "&issue_id=$($Filter.IssueId)";
@@ -112,16 +146,16 @@ class FJRedmine {
     }
 
     [FJIssue[]] GetIssues() {
-        return $this.GetIssues((New-Object FJIssue));
+        return $this.GetIssues((New-Object FJIssueFilter));
     }
 
-    [FJIssue[]] GetIssues([FJIssue] $Filter) {
+    [FJIssue[]] GetIssues([FJIssueFilter] $Filter) {
         $Issues = New-Object System.Collections.ArrayList;
         for ($offset, $total, $limit = 0, 1, 100; $offset -lt $total; $offset += $limit) {
             $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$([FJRedmine]::GetIssueQuery($Filter))");
             $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
-                [void] $Issues.Add([FJIssue]::Create($Element));
+                [void] $Issues.Add((New-Object FJIssue($Element)));
             }
         }
         return $Issues.ToArray();
@@ -132,11 +166,11 @@ class FJRedmine {
         if ($null -eq $Content.issue) {
             return $null;
         }
-        $Issue = [FJIssue]::Create($Content.issue);
+        $Issue = New-Object FJIssue($Content.issue);
         $Attachments = New-Object System.Collections.ArrayList;
         if ($null -ne $Content.issue.attachments) {
             foreach ($Element in [FJRedmine]::ToArray($Content.issue.attachments.attachment)) {
-                [void] $Attachments.Add([FJAttachment]::Create($Element));
+                [void] $Attachments.Add((New-Object FJAttachment($Element)));
             }
         }
         $Issue.Attachments = $Attachments.ToArray();
