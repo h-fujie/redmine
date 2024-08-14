@@ -6,12 +6,16 @@ Add-Type -AssemblyName System.Web;
 class FJAttachment {
     [int]    $AttachmentId;
     [string] $FileName;
+    [string] $Description;
     [string] $ContentType;
     [string] $ContentUrl;
+
+    FJAttachment() {}
 
     FJAttachment([System.Xml.XmlElement] $Element) {
         $this.AttachmentId = $Element.id;
         $this.FileName     = $Element.filename;
+        $this.Description  = $Element.description;
         $this.ContentType  = $Element.content_type;
         $this.ContentUrl   = $Element.content_url;
     }
@@ -185,9 +189,32 @@ class FJRedmine {
         return $Issue;
     }
 
+    hidden static [System.Xml.XmlElement] CreateElement([System.Xml.XmlDocument] $Doc, [string] $Name, [string] $Text) {
+        $Elem = $Doc.CreateElement($Name);
+        $Elem.InnerText = $Text;
+        return $Elem;
+    }
+
     [void] UpdateIssue([FJIssue] $Issue) {
-        # 初版はステータスのみ
+        $this.UpdateIssue($Issue, @());
+    }
+
+    [void] UpdateIssue([FJIssue] $Issue, [FJAttachment[]] $Attachments) {
         $Body = [xml] "<issue><status_id>$($Issue.Status.Id)</status_id></issue>";
+        if ($null -ne $Attachments -and 0 -lt $Attachments.Count) {
+            $Uploads = $Body.CreateElement("uploads");
+            $Uploads.SetAttribute("type", "array");
+            $Body.DocumentElement.AppendChild($Uploads);
+            foreach ($Attachment in $Attachments) {
+                $Upload = $Body.CreateElement("upload");
+                $Uploads.AppendChild($Upload);
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "token", $this.UploadAttachment($Attachment.ContentUrl)));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "filename", $Attachment.FileName));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "description", $Attachment.Description));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "content_type", $Attachment.ContentType));
+            }
+        }
+        Write-Host $Body.OuterXml;
         $this.InvokePutRequest("/issues/$($Issue.IssueId).xml", $Body);
     }
 
@@ -207,5 +234,21 @@ class FJRedmine {
             -Credential ([FJSecurity]::LoadCredential($this.User)) `
             -ErrorAction Stop;
         return $DownloadPath;
+    }
+
+    [string] UploadAttachment([string] $FilePath) {
+        $FileInfo = Get-Item -Path $FilePath;
+        $Response = Invoke-WebRequest `
+            -Uri "$($this.BaseUrl)/uploads.xml?filename=$([System.Web.HttpUtility]::UrlEncode($FileInfo.Name))" `
+            -Method "POST" `
+            -Headers @{
+                "X-Redmine-API-Key" = $this.Token
+                "Content-Type"      = "application/octet-stream"
+                "Accept"            = "application/xml"
+            } `
+            -InFile $FileInfo.FullName `
+            -Credential ([FJSecurity]::LoadCredential($this.User)) `
+            -ErrorAction Stop;
+        return ([xml] $Response.Content).upload.token;
     }
 }
