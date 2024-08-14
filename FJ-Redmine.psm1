@@ -235,7 +235,7 @@ class FJRedmine {
         return $DownloadPath;
     }
 
-    [string] UploadAttachment([string] $FilePath) {
+    hidden [string] UploadAttachment([string] $FilePath) {
         $FileInfo = Get-Item -Path $FilePath;
         $Response = Invoke-WebRequest `
             -Uri "$($this.BaseUrl)/uploads.xml?filename=$([System.Web.HttpUtility]::UrlEncode($FileInfo.Name))" `
