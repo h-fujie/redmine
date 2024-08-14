@@ -48,3 +48,7 @@ $Issues = $Redmine.GetIssues();
 ### 添付ファイル取得
 
 `DownloadAttachment`
+
+## その他
+
+RedBull飲みたいナー
