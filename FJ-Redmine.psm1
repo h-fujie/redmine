@@ -208,13 +208,12 @@ class FJRedmine {
             foreach ($Attachment in $Attachments) {
                 $Upload = $Body.CreateElement("upload");
                 $Uploads.AppendChild($Upload);
-                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "token", $this.UploadAttachment($Attachment.ContentUrl)));
-                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "filename", $Attachment.FileName));
-                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "description", $Attachment.Description));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "token",        $this.UploadAttachment($Attachment.ContentUrl)));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "filename",     $Attachment.FileName));
+                $Upload.AppendChild([FJRedmine]::CreateElement($Body, "description",  $Attachment.Description));
                 $Upload.AppendChild([FJRedmine]::CreateElement($Body, "content_type", $Attachment.ContentType));
             }
         }
-        Write-Host $Body.OuterXml;
         $this.InvokePutRequest("/issues/$($Issue.IssueId).xml", $Body);
     }
 
