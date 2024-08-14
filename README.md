@@ -21,7 +21,7 @@
 ```powershell
 using module .\FJ-Redmine.psm1;
 # 第1引数：RedmineのベースURL
-# 第2引数：APIアクセスキーを渡す
+# 第2引数：APIアクセスキー
 $Redmine = New-Object FJRedmine("http://localhost:8080", "token");
 $Issues = $Redmine.GetIssues();
 ```
@@ -31,8 +31,8 @@ $Issues = $Redmine.GetIssues();
 ```powershell
 using module .\FJ-Redmine.psm1;
 # 第1引数：RedmineのベースURL
-# 第2引数：APIアクセスキーを渡す
-# 第3引数：資格情報登録したユーザIDを渡す
+# 第2引数：APIアクセスキー
+# 第3引数：資格情報登録したユーザID
 $Redmine = New-Object FJRedmine("http://localhost:8080", "token", "h-fujie");
 $Issues = $Redmine.GetIssues();
 ```
