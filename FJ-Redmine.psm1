@@ -77,8 +77,6 @@ class FJIssueFilter {
 }
 
 class FJRedmine {
-    hidden static [string] $TemporaryDir = "$([FJCommon]::BaseDir)\redmine";
-
     hidden [string] $BaseUrl;
     hidden [string] $Token;
     hidden [string] $User;
@@ -218,10 +216,7 @@ class FJRedmine {
     }
 
     [string] DownloadAttachment([FJAttachment] $Attachment) {
-        if (-not (Test-Path -Path $([FJRedmine]::TemporaryDir))) {
-            New-Item -Path $([FJRedmine]::TemporaryDir) -ItemType Directory -Force;
-        }
-        $DownloadPath = "$([FJRedmine]::TemporaryDir)\$((Get-Date).ToString('yyyyMMddHHmmss'))_$($Attachment.FileName)";
+        $DownloadPath = "$([FJCommon]::CreateTemporaryDir())\$($Attachment.FileName)";
         Invoke-WebRequest `
             -Uri $Attachment.ContentUrl `
             -Method "GET" `
