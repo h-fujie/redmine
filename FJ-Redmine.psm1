@@ -3,6 +3,59 @@ using module ".\FJ-Security.psm1";
 
 Add-Type -AssemblyName System.Web;
 
+enum FJOperator {
+    EqualTo              = 0;
+    LessThanOrEqualTo    = 1;
+    GreaterThanOrEqualTo = 2;
+    Between              = 3;
+    Contains             = 4;
+}
+
+class FJRedmineUtils {
+    hidden static [string] GetOperator([FJOperator] $Operator) {
+        switch ($Operator) {
+            ([FJOperator]::EqualTo) {
+                return "=";
+            }
+            ([FJOperator]::LessThanOrEqualTo) {
+                # <=
+                return "=%3C%3D";
+            }
+            ([FJOperator]::GreaterThanOrEqualTo) {
+                # >=
+                return "=%3E%3D";
+            }
+            ([FJOperator]::Between) {
+                # ><
+                return "=%3E%3C";
+            }
+            ([FJOperator]::Contains) {
+                return "=~";
+            }
+        }
+        Write-Error "サポートしていないオペレータです";
+        throw "Unknown operator.";
+    }
+
+    hidden static [string] GetValueString([FJOperator] $Operator, [string] $Value) {
+        $ValueString = [FJRedmineUtils]::GetOperator($Operator);
+        switch ($Operator) {
+            ([FJOperator]::Between) {
+                if (-1 -eq $Value.IndexOf("|")) {
+                    throw "オペレータ 'Between' を指定する際は '|' で値を区切る必要があります。 Value: $($Value)";
+                }
+                $From = [System.Web.HttpUtility]::UrlEncode($Value.Substring(0, $Value.IndexOf("|")));
+                $To   = [System.Web.HttpUtility]::UrlEncode($Value.Substring($Value.IndexOf("|") + 1));
+                $ValueString += "$($From)|$($To)";
+            }
+            Default {
+                $ValueString += [System.Web.HttpUtility]::UrlEncode($Value);
+            }
+        }
+        return $ValueString;
+    }
+}
+
 class FJAttachment {
     [int]    $AttachmentId;
     [string] $FileName;
@@ -48,6 +101,7 @@ class FJIssue {
     [FJTracker]       $Tracker;
     [FJStatus]        $Status;
     [string]          $Subject;
+    [datetime]        $DueDate;
     [string]          $Description;
     [FJCustomField[]] $CustomFields;
     [FJAttachment[]]  $Attachments;
@@ -57,7 +111,10 @@ class FJIssue {
         $this.Project = New-Object FJProject($Element.project);
         $this.Tracker = New-Object FJTracker($Element.tracker);
         $this.Status  = New-Object FJStatus($Element.status);
-        $this.Subject     = $Element.subject;
+        $this.Subject = $Element.subject;
+        if (-not [string]::IsNullOrEmpty($Element.due_date)) {
+            $this.DueDate = [datetime]::Parse($Element.due_date);
+        }
         $this.Description = $Element.description;
         $Fields = New-Object System.Collections.ArrayList;
         if ($null -ne $Element.custom_fields) {
@@ -69,11 +126,82 @@ class FJIssue {
     }
 }
 
+enum FJIssueKey {
+    IssueId              = 100;
+    ProjectId            = 101;
+    TrackerId            = 102;
+    StatusId             = 103;
+    Subject              = 104;
+    DueDate              = 105;
+    Description          = 106;
+    CustomField          = 199;
+}
+
 class FJIssueFilter {
-    [int] $IssueId;
-    [int] $ProjectId;
-    [int] $TrackerId;
-    [int] $StatusId;
+    [FJIssueKey] $Key;
+    [FJOperator] $Operator;
+    [string]     $Value;
+    [int]        $CustomFieldId;
+
+    FJIssueFilter([FJIssueKey] $Key, [FJOperator] $Operator, [string] $Value) {
+        $this.Key           = $Key;
+        $this.Operator      = $Operator;
+        $this.Value         = $Value;
+    }
+
+    FJIssueFilter([FJIssueKey] $Key, [FJOperator] $Operator, [string] $Value, [int] $CustomFieldId) {
+        $this.Key           = $Key;
+        $this.Operator      = $Operator;
+        $this.Value         = $Value;
+        $this.CustomFieldId = $CustomFieldId;
+    }
+
+    hidden [string] GetKeyString() {
+        switch ($this.Key) {
+            ([FJIssueKey]::IssueId) {
+                return "issue_id";
+            }
+            ([FJIssueKey]::ProjectId) {
+                return "project_id";
+            }
+            ([FJIssueKey]::TrackerId) {
+                return "tracker_id";
+            }
+            ([FJIssueKey]::StatusId) {
+                return "status_id";
+            }
+            ([FJIssueKey]::Subject) {
+                return "subject";
+            }
+            ([FJIssueKey]::DueDate) {
+                return "due_date";
+            }
+            ([FJIssueKey]::Description) {
+                return "description";
+            }
+            ([FJIssueKey]::CustomField) {
+                return "cf_$($this.CustomFieldId)";
+            }
+        }
+        Write-Error "サポートしていないキーです";
+        throw "Unknown issue key.";
+    }
+
+    hidden [string] GetQuery() {
+        return "$($this.GetKeyString())$([FJRedmineUtils]::GetValueString($this.Operator, $this.Value))";
+    }
+
+    hidden static [string] GetQueries([FJIssueFilter[]] $Filters) {
+        $Queries = "";
+        foreach ($Filter in $Filters) {
+            if (0 -ne $Queries.Length) {
+                $Queries += "&";
+            }
+            $Queries += $Filter.GetQuery();
+        }
+        Write-Host $Queries;
+        return $Queries;
+    }
 }
 
 class FJRedmine {
@@ -138,31 +266,14 @@ class FJRedmine {
         return @($Object);
     }
 
-    hidden static [string] GetIssueQuery([FJIssueFilter] $Filter) {
-        $Query = "";
-        if (0 -ne $Filter.IssueId) {
-            $Query += "&issue_id=$($Filter.IssueId)";
-        }
-        if (0 -ne $Filter.ProjectId) {
-            $Query += "&project_id=$($Filter.ProjectId)";
-        }
-        if (0 -ne $Filter.TrackerId) {
-            $Query += "&tracker_id=$($Filter.TrackerId)";
-        }
-        if (0 -ne $Filter.StatusId) {
-            $Query += "&status_id=$($Filter.StatusId)";
-        }
-        return $Query;
-    }
-
     [FJIssue[]] GetIssues() {
-        return $this.GetIssues((New-Object FJIssueFilter));
+        return $this.GetIssues(@());
     }
 
-    [FJIssue[]] GetIssues([FJIssueFilter] $Filter) {
+    [FJIssue[]] GetIssues([FJIssueFilter[]] $Filters) {
         $Issues = New-Object System.Collections.ArrayList;
         for ($offset, $total, $limit = 0, 1, 100; $offset -lt $total; $offset += $limit) {
-            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id$([FJRedmine]::GetIssueQuery($Filter))");
+            $Content = $this.InvokeGetRequest("/issues.xml?offset=$($offset)&limit=$($limit)&sort=issue_id&$([FJIssueFilter]::GetQueries($Filters))");
             $total = [int] $Content.issues.total_count;
             foreach ($Element in [FJRedmine]::ToArray($Content.issues.issue)) {
                 [void] $Issues.Add((New-Object FJIssue($Element)));
