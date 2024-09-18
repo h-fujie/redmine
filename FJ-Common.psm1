@@ -8,4 +8,12 @@ class FJCommon {
         }
         return $TemporaryDir;
     }
+
+    static [void] Dispose([System.IDisposable] $Disposable) {
+        try {
+            if ($null -ne $Disposable) {
+                $Disposable.Dispose();
+            }
+        } catch {}
+    }
 }

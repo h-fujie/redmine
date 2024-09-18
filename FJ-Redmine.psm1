@@ -33,8 +33,7 @@ class FJRedmineUtils {
                 return "=~";
             }
         }
-        Write-Error "サポートしていないオペレータです";
-        throw "Unknown operator.";
+        throw "サポートしていないオペレータです";
     }
 
     hidden static [string] GetValueString([FJOperator] $Operator, [string] $Value) {
@@ -183,8 +182,7 @@ class FJIssueFilter {
                 return "cf_$($this.CustomFieldId)";
             }
         }
-        Write-Error "サポートしていないキーです";
-        throw "Unknown issue key.";
+        throw "サポートしていないキーです";
     }
 
     hidden [string] GetQuery() {
