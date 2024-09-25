@@ -42,5 +42,77 @@ class FJFileUtils {
             [FJCommon]::Dispose($ZipArchive);
         }
     }
-
+    static [bool] Exists([string] $Path) {
+        if ([string]::IsNullOrEmpty($Path)) {
+            return $false;
+        }
+        return Test-Path -Path $Path;
+    }
+    static [bool] IsFile([string] $Path) {
+        if (-not ([FJFileUtils]::Exists($Path))) {
+            return $false;
+        }
+        return -not (Get-Item -Path $Path).PSIsContainer;
+    }
+    static [bool] IsDirectory([string] $Path) {
+        if (-not ([FJFileUtils]::Exists($Path))) {
+            return $false;
+        }
+        return (Get-Item -Path $Path).PSIsContainer;
+    }
+    static [string] Split([string] $Path, [int64] $Length) {
+        return [FJFileUtils]::Split($Path, $Length, [System.Text.Encoding]::UTF8);
+    }
+    static [string] Split([string] $Path, [int64] $Length, [System.Text.Encoding] $Encoding) {
+        if (-not ([FJFileUtils]::IsFile($Path))) {
+            throw "ファイルを指定してください。 Path: '$($Path)'";
+        }
+        $Item = Get-Item -Path $Path;
+        $Export = Join-Path $Item.DirectoryName "$($Item.Name)_Export";
+        if (-not ([FJFileUtils]::Exists($Export))) {
+            New-Item -Path $Export -ItemType Directory -ErrorAction Stop;
+        }
+        return [FJFileUtils]::Split($Path, $Length, $Export, $Encoding);
+    }
+    static [string] Split([string] $Path, [int64] $Length, [string] $Export) {
+        return [FJFileUtils]::Split($Path, $Length, $Export, [System.Text.Encoding]::UTF8);
+    }
+    static [string] Split([string] $Path, [int64] $Length, [string] $Export, [System.Text.Encoding] $Encoding) {
+        if (-not ([FJFileUtils]::IsFile($Path))) {
+            throw "ファイルを指定してください。 Path: '$($Path)'";
+        }
+        if (-not ([FJFileUtils]::IsDirectory($Export))) {
+            throw "ディレクトリを指定してください。 Export: '$($Export)'";
+        }
+        $Reader = $null;
+        try {
+            $Item = Get-Item -Path $Path;
+            $Count = 0;
+            $Reader = [System.IO.StreamReader]::new($Item.FullName, $Encoding);
+            while (-not $Reader.EndOfStream) {
+                $Txt = "";
+                while ($Txt.Length -lt $Length -and -not $Reader.EndOfStream) {
+                    $Txt += [char] $Reader.Read();
+                }
+                $Writer = $null;
+                try {
+                    $FilePath = Join-Path $Export "$($Item.Name).$($Count)";
+                    $Writer = [System.IO.StreamWriter]::new($FilePath, $false, $Encoding);
+                    $Writer.Write($Txt);
+                    $Count++;
+                }
+                catch {
+                    throw $_.Exception;
+                }
+                finally {
+                    [FJCommon]::Dispose($Writer);
+                }
+            }
+        } catch {
+            throw $_.Exception;
+        } finally {
+            [FJCommon]::Dispose($Reader);
+        }
+        return $Export;
+    }
 }
