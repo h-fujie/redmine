@@ -1,4 +1,4 @@
-class FJCommon {
+﻿class FJCommon {
     static [string] $BaseDir = "$($Env:USERPROFILE)\.fj";
 
     static [string] CreateTemporaryDir() {
