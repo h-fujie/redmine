@@ -68,7 +68,7 @@ class FJFileUtils {
             throw "ファイルを指定してください。 Path: '$($Path)'";
         }
         $Item = Get-Item -Path $Path;
-        $Export = Join-Path $Item.DirectoryName "$($Item.Name)_Export";
+        $Export = Join-Path -Path $Item.DirectoryName -ChildPath "$($Item.Name)_Export";
         if (-not ([FJFileUtils]::Exists($Export))) {
             New-Item -Path $Export -ItemType Directory -ErrorAction Stop;
         }
@@ -90,15 +90,15 @@ class FJFileUtils {
             $Count = 0;
             $Reader = [System.IO.StreamReader]::new($Item.FullName, $Encoding);
             while (-not $Reader.EndOfStream) {
-                $Txt = "";
+                $Txt = [System.Text.StringBuilder]::new();
                 while ($Txt.Length -lt $Length -and -not $Reader.EndOfStream) {
-                    $Txt += [char] $Reader.Read();
+                    [void] $Txt.Append([char] $Reader.Read());
                 }
                 $Writer = $null;
                 try {
-                    $FilePath = Join-Path $Export "$($Item.Name).$($Count)";
+                    $FilePath = Join-Path -Path $Export -ChildPath "$($Item.Name).$($Count)";
                     $Writer = [System.IO.StreamWriter]::new($FilePath, $false, $Encoding);
-                    $Writer.Write($Txt);
+                    $Writer.Write($Txt.ToString());
                     $Count++;
                 }
                 catch {
