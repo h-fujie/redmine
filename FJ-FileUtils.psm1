@@ -1,6 +1,11 @@
 ﻿using module ".\FJ-Common.psm1";
 
-Add-Type -AssemblyName System.IO.Compression.FileSystem;
+<#
+ # モジュール読込前に参照DLLを読み込むこと
+ # $NETPath = Get-ItemPropertyValue -LiteralPath 'HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full' -Name InstallPath;
+ # [Reflection.Assembly]::LoadFile((Join-Path -Path $NETPath -ChildPath "System.IO.Compression.dll"));
+ # [Reflection.Assembly]::LoadFile((Join-Path -Path $NETPath -ChildPath "System.IO.Compression.ZipFile.dll"));
+ #>
 
 class FJFileUtils {
     static [void] ArchiveFile([string] $Path, [string[]] $Entries) {
