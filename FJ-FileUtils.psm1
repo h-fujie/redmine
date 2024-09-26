@@ -14,7 +14,7 @@ class FJFileUtils {
         }
         foreach ($Entry in $Entries) {
             if (-not (Test-Path -Path $Entry)) {
-                throw "エントリが存在しません。 Entry: '$($Entry)";
+                throw "エントリが存在しません。 Entry: '$($Entry)'";
             }
         }
         $ZipArchive = $null;
@@ -33,7 +33,7 @@ class FJFileUtils {
                         $EntryWriter.WriteLine($EntryReader.ReadLine());
                     }
                 } catch {
-                    Write-Error "アーカイブエントリ作成に失敗しました。 Entry: '$($Entry)";
+                    Write-Error "アーカイブエントリ作成に失敗しました。 Entry: '$($Entry)'";
                     throw $_.Exception;
                 } finally {
                     [FJCommon]::Dispose($EntryWriter);
@@ -41,7 +41,7 @@ class FJFileUtils {
                 }
             }
         } catch {
-            Write-Error "アーカイブファイル作成に失敗しました。 Path: '$($Path)";
+            Write-Error "アーカイブファイル作成に失敗しました。 Path: '$($Path)'";
             throw $_.Exception;
         } finally {
             [FJCommon]::Dispose($ZipArchive);
