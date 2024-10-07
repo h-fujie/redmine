@@ -19,6 +19,15 @@ class FJLogUtils {
         return [FJLogUtils]::ArchiveLogFiles($Path, $Date, $ArchiveFile);
     }
     static [string] ArchiveLogFiles([string] $Path, [datetime] $Date, [string] $ArchiveFile) {
+        if ([string]::IsNullOrEmpty($Path)) {
+            throw "圧縮対象が指定されていません。"
+        }
+        if ($null -eq $Date) {
+            throw "日付が指定されていません。";
+        }
+        if ([string]::IsNullOrEmpty($ArchiveFile)) {
+            throw "圧縮ファイルパスが指定されていません。";
+        }
         $Start = Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0;
         $From = (Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0).AddDays(1);
         $Target = Get-ChildItem -Path $Path -File -Force | Where-Object { $_.CreationTime -ge $Start -and $_.CreationTime -lt $From };
