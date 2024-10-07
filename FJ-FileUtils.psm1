@@ -8,7 +8,7 @@
  #>
 
 class FJFileUtils {
-    static [void] ArchiveFile([string] $Path, [string[]] $Entries) {
+    static [void] ArchiveFiles([string] $Path, [string[]] $Entries) {
         if (Test-Path -Path $Path) {
             throw "アーカイブファイルがすでに存在します。 Path: '$($Path)'";
         }

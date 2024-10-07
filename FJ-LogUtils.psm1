@@ -31,7 +31,7 @@ class FJLogUtils {
         $Start = Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0;
         $From = (Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0).AddDays(1);
         $Target = Get-ChildItem -Path $Path -File -Force | Where-Object { $_.CreationTime -ge $Start -and $_.CreationTime -lt $From };
-        [FJFileUtils]::ArchiveFile($ArchiveFile, $Target.FullName);
+        [FJFileUtils]::ArchiveFiles($ArchiveFile, $Target.FullName);
         return $ArchiveFile;
     }
 }
