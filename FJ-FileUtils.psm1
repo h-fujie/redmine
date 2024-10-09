@@ -30,7 +30,7 @@ class FJFileUtils {
                     $EntryReader = [System.IO.StreamReader]::new($Item.FullName);
                     $EntryWriter = [System.IO.StreamWriter]::new($ZipArchiveEntry.Open(), $EntryReader.CurrentEncoding);
                     while (-not $EntryReader.EndOfStream) {
-                        $EntryWriter.WriteLine($EntryReader.ReadLine());
+                        $EntryWriter.Write([char] $EntryReader.Read());
                     }
                 } catch {
                     Write-Error "アーカイブエントリ作成に失敗しました。 Entry: '$($Entry)'";

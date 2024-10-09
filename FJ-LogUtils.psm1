@@ -31,7 +31,31 @@ class FJLogUtils {
         $Start = Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0;
         $From = (Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0).AddDays(1);
         $Target = Get-ChildItem -Path $Path -File -Force | Where-Object { $_.CreationTime -ge $Start -and $_.CreationTime -lt $From };
+        if (0 -eq $Target.Count) {
+            Write-Warning "圧縮対象のファイルが見つかりませんでした。";
+            return "";
+        }
         [FJFileUtils]::ArchiveFiles($ArchiveFile, $Target.FullName);
         return $ArchiveFile;
+    }
+    static [void] DeleteLogFiles([string] $Path) {
+        $Date = (Get-Date).AddDays(-2);
+        [FJLogUtils]::DeleteLogFiles($Path, $Date);
+    }
+    static [void] DeleteLogFiles([string] $Path, [datetime] $Date) {
+        if ([string]::IsNullOrEmpty($Path)) {
+            throw "削除対象が指定されていません。"
+        }
+        if ($null -eq $Date) {
+            throw "日付が指定されていません。";
+        }
+        $Start = Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0;
+        $From = (Get-Date -Date $Date -Hour 0 -Minute 0 -Second 0 -Millisecond 0).AddDays(1);
+        $Target = Get-ChildItem -Path $Path -File -Force | Where-Object { $_.CreationTime -ge $Start -and $_.CreationTime -lt $From };
+        if (0 -eq $Target.Count) {
+            Write-Warning "削除対象のファイルが見つかりませんでした。";
+            return;
+        }
+        Remove-Item -Path $Target.FullName -Force;
     }
 }
