@@ -15,8 +15,12 @@ class FJLogUtils {
         return [FJLogUtils]::ArchiveLogFiles($Path, $Date);
     }
     static [string] ArchiveLogFiles([string] $Path, [datetime] $Date) {
-        $ArchiveFile = Join-Path -Path ([FJCommon]::CreateTemporaryDir()) -ChildPath "$($Date.ToString('yyyyMMdd')).zip";
-        return [FJLogUtils]::ArchiveLogFiles($Path, $Date, $ArchiveFile);
+        $TempDir = [FJCommon]::CreateTemporaryDir();
+        $ArchiveFile = [FJLogUtils]::ArchiveLogFiles($Path, $Date, (Join-Path -Path $TempDir -ChildPath "$($Date.ToString('yyyyMMdd')).zip"));
+        if ([string]::IsNullOrEmpty($ArchiveFile)) {
+            Remove-Item -Path $TempDir -Force;
+        }
+        return $ArchiveFile;
     }
     static [string] ArchiveLogFiles([string] $Path, [datetime] $Date, [string] $ArchiveFile) {
         if ([string]::IsNullOrEmpty($Path)) {
